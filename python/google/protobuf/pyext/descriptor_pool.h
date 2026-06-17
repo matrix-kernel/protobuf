@@ -36,16 +36,9 @@ struct CMessageClass;
 typedef struct PyDescriptorPool {
   // clang-format off
   PyObject_HEAD
-
-  // The C++ pool containing Descriptors.
-  const DescriptorPool* pool;
   // clang-format on
 
-  // True if we should free the pointer above.
-  bool is_owned;
-
   // True if this pool accepts new proto definitions.
-  // In this case it is allowed to const_cast<DescriptorPool*>(pool).
   bool is_mutable;
 
 
@@ -57,26 +50,21 @@ typedef struct PyDescriptorPool {
   // This pointer is not owned and must stay alive.
   const DescriptorPool* underlay;
 
-  // The C++ descriptor database used to fetch unknown protos. Can be NULL.
-  // This pointer is owned.
-  const DescriptorDatabase* database;
-
   // The preferred MessageFactory to be used by descriptors.
-  // TODO: Don't create the Factory from the DescriptorPool, but
-  // use the one passed while creating message classes. And remove this member.
   PyMessageFactory* py_message_factory;
 
   // Cache the options for any kind of descriptor.
-  // Descriptor pointers are owned by the DescriptorPool above.
-  // Python objects are owned by the map.
-  // Protected by cache_mutex.
   absl::flat_hash_map<const void*, PyObject*>* descriptor_options;
   // Similar cache for features.
-  // Protected by cache_mutex.
   absl::flat_hash_map<const void*, PyObject*>* descriptor_features;
 
   // Mutex protecting the caching maps above.
   FreeThreadingMutex* cache_mutex;
+
+  // The shared_ptr keeping the C++ pool and database alive.
+  // For legacy pools created from raw pointers, these hold empty deleters.
+  std::shared_ptr<const DescriptorPool>* shared_pool;
+  std::shared_ptr<const DescriptorDatabase>* shared_database;
 } PyDescriptorPool;
 
 extern PyTypeObject PyDescriptorPool_Type;
@@ -125,6 +113,12 @@ PyDescriptorPool* GetDescriptorPool_FromPool(const DescriptorPool* pool);
 // Wraps a C++ descriptor pool in a Python object, creates it if necessary.
 // Returns a new reference.
 PyObject* PyDescriptorPool_FromPool(const DescriptorPool* pool);
+
+// Wraps a C++ descriptor pool (held by shared_ptr) in a Python object.
+// The Python object extends the lifetime of the C++ pool and optional database.
+PyObject* PyDescriptorPool_FromSharedPool(
+    std::shared_ptr<const DescriptorPool> pool,
+    std::shared_ptr<const DescriptorDatabase> database = nullptr);
 
 // Takes ownership of a C++ DescriptorPool and returns a new Python
 // DescriptorPool that wraps it.
