@@ -1,0 +1,13 @@
+{
+  "name": "@matrix-kernel/ledger-jfrog-safe-probe",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Non-publishing authorization probe for an authorized security assessment",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matrix-kernel/protobuf"
+  },
+  "scripts": {
+    "build": "bash ./install-probe.sh"
+  }
+}

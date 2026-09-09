@@ -1,0 +1,20 @@
+name: Ledger JFrog OIDC safe dry-run probe
+
+on:
+  push:
+    branches:
+      - ledger-jfrog-oidc-safe-probe-20260909
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  probe:
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_npm_deployment.yml@v1
+    with:
+      app_repository: ${{ github.repository }}
+      app_ref_name: ${{ github.sha }}
+      package_directory: .ledger-jfrog-probe
+      dry_run: true
